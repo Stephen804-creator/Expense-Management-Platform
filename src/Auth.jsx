@@ -19,7 +19,8 @@ export function AuthProvider({ children }) {
 
     try {
       setLoading(true);
-      const userData = await api.get('/auth/me');
+      const response = await api.get('/auth/me');
+      const userData = response?.data ?? response;
       setUser(userData);
     } catch (err) {
       removeAuthToken();
@@ -43,8 +44,14 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     try {
-      const data = await api.post('/auth/login', { email, password });
-      const token = data.access_token || data.token;
+      const response = await api.post('/auth/login', { email, password });
+      const data = response?.data ?? response;
+      const token = data?.access_token || data?.token;
+
+      if (!token) {
+        throw new Error(response?.message || 'Login response did not include an access token.');
+      }
+
       setAuthToken(token);
       await fetchCurrentUser();
       showToast('Logged in successfully!', 'success');
@@ -57,9 +64,9 @@ export function AuthProvider({ children }) {
 
   const register = async (firstName, lastName, email, password) => {
     try {
+      const fullName = [firstName, lastName].map((name) => name.trim()).filter(Boolean).join(' ');
       await api.post('/auth/register', {
-        first_name: firstName,
-        last_name: lastName,
+        full_name: fullName,
         email,
         password,
       });
@@ -89,8 +96,9 @@ export function AuthProvider({ children }) {
   };
 
   const getInitials = (firstName = '', lastName = '') => {
-    const f = (firstName || user?.first_name || '').trim().charAt(0).toUpperCase();
-    const l = (lastName || user?.last_name || '').trim().charAt(0).toUpperCase();
+    const nameParts = (user?.full_name || '').trim().split(/\s+/).filter(Boolean);
+    const f = (firstName || user?.first_name || nameParts[0] || '').trim().charAt(0).toUpperCase();
+    const l = (lastName || user?.last_name || nameParts.slice(1).join(' ') || '').trim().charAt(0).toUpperCase();
     return `${f}${l}` || 'U';
   };
 
