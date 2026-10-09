@@ -21,7 +21,8 @@ export function AuthProvider({ children }) {
       setLoading(true);
       const response = await api.get('/auth/me');
       const userData = response?.data ?? response;
-      setUser(userData);
+      const user = userData?.data ?? userData;
+      setUser(user);
     } catch (err) {
       removeAuthToken();
       setUser(null);
@@ -44,12 +45,13 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     try {
-      const response = await api.post('/auth/login', { email, password });
-      const data = response?.data ?? response;
+      const response = await api.post('/auth/login', { email: email.trim(), password });
+      const envelope = response?.data ?? response;
+      const data = envelope?.data ?? envelope;
       const token = data?.access_token || data?.token;
 
       if (!token) {
-        throw new Error(response?.message || 'Login response did not include an access token.');
+        throw new Error(envelope?.message || response?.message || 'Login response did not include an access token.');
       }
 
       setAuthToken(token);
@@ -65,11 +67,14 @@ export function AuthProvider({ children }) {
   const register = async (firstName, lastName, email, password) => {
     try {
       const fullName = [firstName, lastName].map((name) => name.trim()).filter(Boolean).join(' ');
-      await api.post('/auth/register', {
+      const response = await api.post('/auth/register', {
         full_name: fullName,
-        email,
+        email: email.trim(),
         password,
       });
+      if (response?.success === false) {
+        throw new Error(response.message || 'Registration failed. Please try again.');
+      }
       showToast('Account created successfully! Logging you in...', 'success');
       return await login(email, password);
     } catch (err) {
