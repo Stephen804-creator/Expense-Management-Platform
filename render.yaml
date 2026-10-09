@@ -1,0 +1,52 @@
+# Render Blueprint for the fork. Deployment configuration only.
+services:
+  - type: web
+    name: expense-management-api
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: POSTGRES_HOST
+        fromDatabase:
+          name: expense-management-db
+          property: host
+      - key: POSTGRES_PORT
+        fromDatabase:
+          name: expense-management-db
+          property: port
+      - key: POSTGRES_USER
+        fromDatabase:
+          name: expense-management-db
+          property: user
+      - key: POSTGRES_PASSWORD
+        fromDatabase:
+          name: expense-management-db
+          property: password
+      - key: POSTGRES_DB
+        fromDatabase:
+          name: expense-management-db
+          property: database
+
+  - type: web
+    name: expense-management-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        fromService:
+          type: web
+          name: expense-management-api
+          property: host
+          envVarKey: VITE_API_BASE_URL
+
+databases:
+  - name: expense-management-db
+    databaseName: expense_db
+    user: expense_user
+    plan: free
