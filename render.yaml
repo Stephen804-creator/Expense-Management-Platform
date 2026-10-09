@@ -39,11 +39,7 @@ services:
     staticPublishPath: dist
     envVars:
       - key: VITE_API_BASE_URL
-        fromService:
-          type: web
-          name: expense-management-api
-          property: host
-          envVarKey: VITE_API_BASE_URL
+        value: https://expense-management-api.onrender.com/api
 
 databases:
   - name: expense-management-db
