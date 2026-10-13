@@ -103,6 +103,15 @@ Accessibility includes semantic headings, labels associated with inputs, keyboar
 - **State and database drift:** browser storage contains a record that the server does not, or vice versa.
 - **Missing tests:** a build can pass even though a user journey is functionally broken.
 
+## Important repository detail: two frontend source locations
+
+The repository contains both a root-level `src/` directory and a `frontend/src/` directory. Docker Compose builds its frontend service from `./frontend`, so the Compose deployment uses the frontend under `frontend/`, not automatically the root-level version. The root README describes localStorage-backed records, while `frontend/src/App.jsx` includes data loading through the Flask API. These designs are different.
+
+A component can exist in the root tree without being included in the deployed Docker image. Before defending a feature, verify the build context, entry point, workflow, and deployed version. The team should consolidate or clearly label the unused source tree and update the README to match the implementation actually deployed.
+
+**Likely tutor question: “Why do you have two frontend folders, and which one is running?”**  
+A strong answer is: “The repository has two frontend source trees, so we verify the build rather than guessing. Docker Compose builds `./frontend`, so that is the frontend used by that Compose configuration. We should remove or clearly document the unused tree and keep the README aligned with the deployed code.”
+
 ## 8. How the frontend connects to the other sections
 
 React is responsible for presentation and interaction. The API contract connects it to Flask. Authentication supplies the token needed for protected requests. PostgreSQL is the durable source of truth when the feature is truly backend-connected. Nginx can route browser requests to the frontend or API. Docker packages the frontend. GitHub Actions can lint and build it. AWS hosts the running deployment.
@@ -1170,6 +1179,14 @@ Use the original capstone handout as the final authority for exact wording. The 
 | Health endpoint | Service responds through the intended route | HTTP status/body from public endpoint | “Health means every feature works.” |
 | README and documentation | Reproducible setup and clear architecture | Updated setup, environment variables, architecture, limitations | “A setup guide can omit required secrets and migration steps.” |
 | Screenshots and live demo | Evidence that a real scenario works | Dated screenshots, recording, test account | “A screenshot alone proves database persistence.” |
+
+## Repository consistency risk: duplicate frontend source trees
+
+The repository has both root-level `src/` and `frontend/src/`. The root README describes localStorage-backed application records, but the Compose frontend is built from `./frontend`, whose main app loads data through the Flask API. These are not interchangeable implementations. A component may exist in the root tree but never be included in the Docker image used for AWS.
+
+Before the defense, confirm the actual build context and deployed image, update the README to describe that version, and either remove the unused source tree in a separate reviewed change or explain why both trees are retained. Do not claim both implementations are active unless the build and deployment prove that.
+
+**Evidence to prepare:** the Compose `build:` setting, the frontend entry point included in the image, the workflow's build context, the deployed image tag/digest or commit, and a browser demonstration of a transaction saved through the Flask API and retrieved after reload/login.
 
 ## 5. The most important integration risk in this repository
 
