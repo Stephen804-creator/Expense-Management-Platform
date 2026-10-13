@@ -42,6 +42,6 @@ This guide deliberately separates three things:
 
 The repository has a React frontend, Flask backend, PostgreSQL integration, Docker files, Nginx configuration, and GitHub Actions workflows. However, having two components in one repository does not by itself prove that the frontend uses the backend for every feature. The existing frontend documentation describes browser `localStorage` persistence, while the backend exposes database-backed API routes. Verify the actual frontend calls and end-to-end behaviour before claiming full integration.
 
-The deployment workflow currently contains Azure-specific labels and secret names in the source reviewed for this guide. The team has stated that the tutor approved AWS as the alternative deployment target. Therefore, this guide treats **AWS as the agreed target**, but does not claim that the existing workflow is already AWS-ready or that a live AWS deployment has been independently verified.
+The tutor has approved AWS as the deployment target. The deployment workflow must use AWS-compatible host, authentication, and deployment settings. This guide does not claim that automated AWS deployment or a live release has been independently verified.
 
 The exact wording of the tutor's capstone handout takes precedence over this guide. Use the guide to understand and demonstrate the work, not to replace the official requirements or fabricate evidence.
