@@ -1250,7 +1250,7 @@ Use the original capstone handout as the final authority for exact wording. The 
 
 ## Repository consistency risk: duplicate frontend source trees
 
-The repository has both root-level `src/` and `frontend/src/`. The root README describes localStorage-backed application records, but the Compose frontend is built from `./frontend`, whose main app loads data through the Flask API. These are not interchangeable implementations. A component may exist in the root tree but never be included in the Docker image used for the AWS deployment.
+The repository has both root-level `src/` and `frontend/src/`. The root README claims localStorage-backed application-record persistence, but the Compose frontend is built from `./frontend`, whose main app loads categories, expenses, budgets, and summaries through the Flask API. The README and active frontend source therefore need to be reconciled. A component may exist in the root tree but never be included in the Docker image used for the AWS deployment.
 
 Before the defense, the team should confirm the actual build context and deployed image, update the README to describe that version, and either remove the unused source tree in a separate reviewed change or explain why both trees are retained. Do not claim both implementations are active unless the build and deployment prove that.
 
@@ -1258,7 +1258,7 @@ Before the defense, the team should confirm the actual build context and deploye
 
 ## Repository consistency risk: duplicate frontend source trees
 
-The repository has both root-level `src/` and `frontend/src/`. The root README describes localStorage-backed application records, but the Compose frontend is built from `./frontend`, whose main app loads data through the Flask API. These are not interchangeable implementations. A component may exist in the root tree but never be included in the Docker image used for the AWS deployment.
+The repository has both root-level `src/` and `frontend/src/`. The root README claims localStorage-backed application-record persistence, but the Compose frontend is built from `./frontend`, whose main app loads categories, expenses, budgets, and summaries through the Flask API. The README and active frontend source therefore need to be reconciled. A component may exist in the root tree but never be included in the Docker image used for the AWS deployment.
 
 Before the defense, the team should confirm the actual build context and deployed image, update the README to describe that version, and either remove the unused source tree in a separate reviewed change or explain why both trees are retained. Do not claim both implementations are active unless the build and deployment prove that.
 
