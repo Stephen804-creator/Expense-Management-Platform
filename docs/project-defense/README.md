@@ -40,7 +40,7 @@ Do not claim a stronger status than the evidence supports. If a question exposes
 
 ## Deployment target
 
-The capstone PDF names Azure VM deployment. The team has stated that the tutor accepted AWS as an alternative and the application was deployed on AWS. This pack therefore teaches the cloud section using **AWS EC2 as the VM target**. Before the defence, make sure the actual repository workflow, README, secret names, architecture diagram, and live URL agree with the AWS deployment that the team will demonstrate. Do not describe Azure resources as if they were used.
+The tutor accepted AWS as the deployment target, and this study pack therefore explains the cloud section using **AWS EC2 as the VM host**. Before the defence, make sure the repository workflow, README, secret names, architecture diagram, and live URL agree with the AWS deployment that the team can demonstrate. Distinguish the configured deployment process from a verified live release.
 
 ## How to study
 
