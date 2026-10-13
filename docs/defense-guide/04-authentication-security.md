@@ -114,6 +114,19 @@ The deployment must also avoid trusting arbitrary forwarded headers unless the p
 
 Security claims must be supported by specific controls and tests.
 
+## 12. How security connects to the capstone
+
+Security must hold across the full deployed request path, not just on the login screen.
+
+- **React:** collects credentials and sends the token with protected API calls. Client-side hiding of buttons is not authorization.
+- **Flask:** validates credentials, verifies the JWT, derives the current user identity, checks ownership/permissions, validates input, and returns safe errors.
+- **PostgreSQL:** stores users and application records. Foreign keys and constraints protect data relationships, but they do not by themselves prove that a request is allowed to read a record.
+- **Nginx and networking:** route requests and should be configured with safe headers and an appropriate HTTPS/TLS arrangement for public use.
+- **Docker and AWS:** production secrets must be injected securely; placeholder secrets and development defaults must not be used for a public deployment. The public server should expose only the ports and services required.
+- **Testing and CI:** include unauthenticated access, invalid tokens, cross-user record access, malformed values, and secret/configuration checks. A green build without these cases is not proof of complete security.
+
+**Capstone proof:** demonstrate that user A cannot read, edit, delete, or export user B's records by changing an ID or calling the API directly. Show the exact test result and the deployed configuration evidence available to the team.
+
 ## 12. Tough defense questions
 
 **Q1. What is the difference between authentication and authorization?**  
