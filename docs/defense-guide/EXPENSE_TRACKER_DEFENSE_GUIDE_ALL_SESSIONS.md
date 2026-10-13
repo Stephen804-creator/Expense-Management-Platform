@@ -935,7 +935,7 @@ Deployment makes a version of the application available in an environment where 
 
 A deployed system needs the right application version, runtime configuration, network routes, database, secrets, persistent storage, health checks, and a way to recover if an update fails.
 
-The team has stated that the tutor approved AWS as the alternative to the cloud platform named in the original workflow. This guide therefore explains the intended deployment on AWS. It does not claim that the current Azure-labelled workflow is already configured for AWS or that a live deployment has been independently verified.
+The tutor has approved AWS as the deployment target. This guide explains the intended AWS deployment, but it does not claim that the current workflow is already configured correctly for AWS or that a live deployment has been independently verified.
 
 ## 2. Docker and containers
 
@@ -1008,7 +1008,7 @@ AWS IAM should grant the deployment identity only the permissions it needs. Do n
 
 ## 8. Critical source-to-runtime mismatch to understand
 
-The reviewed `.github/workflows/cd.yml` still names an Azure VM and Azure-specific secret variables. It also describes pulling images and running Compose, while the current Compose file and migrations must be examined together to confirm that schema changes are actually applied before the application restarts.
+The reviewed `.github/workflows/cd.yml` contains cloud-host and secret-variable assumptions that must match the actual AWS deployment. It also describes pulling images and running Compose, so the team must verify that the exact tested image is deployed and that required database migrations succeed before application services restart.
 
 The team has stated that AWS is the approved target. The workflow should therefore be updated to use the agreed AWS deployment method and secret names, or the team must document the separate deployment process actually used. Until that is done, do not tell a tutor that the repository's automated CD workflow deploys to AWS merely because the app was manually deployed there.
 
@@ -1073,8 +1073,8 @@ The new code may expect a schema change. If the database is not updated, request
 **Q7. Does passing CI prove the AWS deployment works?**  
 No. CI runs in its own environment. AWS has its own networking, secrets, existing data, image versions, and runtime conditions. The live system needs separate checks.
 
-**Q8. Why is the current Azure-labelled workflow important if the tutor approved AWS?**  
-Because the source configuration must match the actual target. Azure secret names and host assumptions do not magically become AWS settings. The workflow or the documented deployment method must be updated and verified.
+**Q8. Why must the deployment workflow be checked if AWS is the approved target?**  
+Because workflow configuration must match the real server, authentication method, image registry, secrets, and deployment commands. A workflow that merely has a successful CI build does not prove that it can deploy to AWS.
 
 **Q9. What is the risk of deploying `latest`?**  
 It can point to different image content over time, making rollbacks and evidence less precise. Immutable tags or digests make it easier to identify the exact artifact that was tested.
@@ -1090,7 +1090,7 @@ Record the tested commit, build images from that commit, deploy immutable image 
 
 ## 12. Explain it in one minute
 
-“Docker packages the frontend and backend and Compose connects them to PostgreSQL and Nginx. Nginx routes public requests, PostgreSQL uses a persistent volume, and health checks provide limited signals about service availability. GitHub Actions CI checks code and builds; CD publishes and deploys a specific version. Our agreed cloud target is AWS, but the workflow source reviewed still contains Azure-specific configuration, so it must be aligned before we claim automated AWS deployment. We prove a release with the exact commit or image digest, migration logs, public health checks, and a real user journey.”
+“Docker packages the frontend and backend and Compose connects them to PostgreSQL and Nginx. Nginx routes public requests, PostgreSQL uses a persistent volume, and health checks provide limited signals about service availability. GitHub Actions CI checks code and builds; CD publishes and deploys a specific version. Our agreed cloud target is AWS, so the deployment workflow must be checked against the actual AWS server, secrets, image version, and deployment commands before we claim automated AWS deployment. We prove a release with the exact commit or image digest, migration logs, public health checks, and a real user journey.”
 
 ---
 
@@ -1179,7 +1179,7 @@ This issue should be discussed constructively and precisely. Do not say “the a
 
 ## 6. The most important deployment alignment risk
 
-The reviewed CD workflow contains Azure VM labels and Azure-specific secret names. The tutor has approved AWS as the alternative target, so the team should update the automated workflow to the actual AWS deployment method or document the manual deployment method that is truly used.
+The CD workflow must be consistent with the AWS deployment method the team actually uses. The team should verify the host, secrets, image version, commands, and recovery path, or clearly document the verified manual deployment procedure.
 
 Until that is done, separate three statements:
 - **Approved target:** AWS has been accepted by the tutor, according to the team.
@@ -1245,7 +1245,7 @@ The browser should not have database credentials or direct database access. The 
 **Q11. Does an access token mean every API request is safe?**  
 No. The token must be valid, the route must enforce authentication, the resource must be scoped to the user, inputs must be validated, and the database must enforce integrity.
 
-**Q12. If AWS is the approved target, why is Azure still in the workflow?**  
+**Q12. How do we know the workflow deploys to the approved AWS environment?**  
 The source configuration has not yet been fully aligned with the team's updated deployment decision. The correction is to update the pipeline and secrets for the actual AWS method and then prove it with a successful run and live verification. Approval of a target is not the same as implementation of its deployment pipeline.
 
 **Q13. How do you respond when you do not know whether a feature is fully integrated?**  
