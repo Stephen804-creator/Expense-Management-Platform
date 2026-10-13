@@ -99,6 +99,19 @@ A category may be global or user-owned. That is a product/security decision, not
 
 A tutor may intentionally ask an ambiguous question to see whether the team distinguishes the rule from the implementation. State the rule first, explain how it is enforced, and describe the evidence.
 
+## 10. How business logic connects to the capstone
+
+Business logic is the meaning of the application. It explains what counts as an expense, which category a budget applies to, how a monthly total is calculated, and what should happen when data is invalid or conflicts with existing records.
+
+- **React:** collects values and presents totals, progress, and alerts. It can make a screen easier to use, but it must not be the only place where important rules are enforced.
+- **Flask:** is responsible for validating values and applying server-side rules before records are saved or totals are returned.
+- **PostgreSQL:** preserves critical relationships and uniqueness rules even when concurrent requests arrive or an API route has a bug.
+- **Reports and dashboards:** must use consistent date boundaries, categories, ownership filters, and formulas. A dashboard total and a report total should agree when they cover the same records and period.
+- **QA and CI:** use known test data with manually calculated expected totals. Test normal cases, empty months, boundary dates, duplicate budgets, deleted categories, and invalid amounts.
+- **AWS deployment:** the demonstrated result must come from the actual deployed API and database. A feature in source code or a browser-only demo does not prove that it works on the server.
+
+**Important accuracy rule:** the repository has both a root-level frontend and a `frontend/` frontend. The Compose file builds `./frontend`; the root README also describes localStorage-backed records. Verify the active UI and persistence path before claiming that every listed screen is connected to PostgreSQL. The guide teaches the intended rules, but only tested implementation evidence proves that a feature is complete.
+
 ## 10. Tough defense questions
 
 **Q1. Why store a category ID instead of the category name in every expense?**  
