@@ -86,6 +86,15 @@ Accessibility includes semantic headings, labels associated with inputs, keyboar
 - **State and database drift:** browser storage contains a record that the server does not, or vice versa.
 - **Missing tests:** a build can pass even though a user journey is functionally broken.
 
+## Important repository detail: two frontend source locations
+
+The repository contains both a root-level `src/` directory and a `frontend/src/` directory. The root `package.json` can build the root Vite app, but the Docker Compose configuration builds the frontend service from `./frontend`. That means the frontend packaged by the Compose deployment is the one under `frontend/`, not automatically the root-level `src/` version.
+
+This matters in a defense: do not point to a component in the root `src/` tree and assume that it is running on AWS. Check the Docker build context, the active workflow, and the deployed image. The root README describes localStorage-backed records, while `frontend/src/App.jsx` includes state loaded through the Flask API. These are different persistence designs. The team should identify which interface is actually deployed and keep the README aligned with it.
+
+**Likely tutor question: “Why do you have two frontend folders, and which one is running?”**  
+A strong answer is: “The repository currently contains two frontend source trees, so we verify the actual entry point rather than guessing. Docker Compose builds `./frontend`, so that is the frontend used by that Compose configuration. We should consolidate or clearly label the unused tree and update the README to avoid describing one version while deploying another.”
+
 ## 8. How the frontend connects to the other sections
 
 React is responsible for presentation and interaction. The API contract connects it to Flask. Authentication supplies the token needed for protected requests. PostgreSQL is the durable source of truth when the feature is truly backend-connected. Nginx can route browser requests to the frontend or API. Docker packages the frontend. GitHub Actions can lint and build it. AWS hosts the running deployment.
