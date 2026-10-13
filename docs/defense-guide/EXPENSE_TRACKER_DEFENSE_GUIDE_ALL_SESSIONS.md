@@ -772,6 +772,14 @@ A category may be global or user-owned. That is a product/security decision, not
 
 A tutor may intentionally ask an ambiguous question to see whether the team distinguishes the rule from the implementation. State the rule first, explain how it is enforced, and describe the evidence.
 
+## Feature-claim check: income management
+
+The root README advertises income management and lists an Income page in the root `src/pages/` tree. The frontend that Docker Compose builds is `frontend/`; its `frontend/src/App.jsx` imports Dashboard, Budgets, Categories, Transactions, Reports, and Settings, but not an Income page. The reviewed backend route directory contains `auth.py`, `budgets.py`, `categories.py`, `expenses.py`, and `summaries.py`; it does not show an income API route.
+
+That does not prove that no income-related code exists anywhere, but it means the current API-connected deployment path does not demonstrate an income feature from the files reviewed. In a defense, do not promise a feature solely because it appears in an old README or unused source tree.
+
+**Team decision:** either implement income as a real API-backed feature and test it end to end, or update the README and demonstration scope so they describe what the active application actually supports. If asked, state the current evidence and limitation honestly.
+
 ## 10. How business logic connects to the capstone
 
 Business logic is the meaning of the application. It explains what counts as an expense, which category a budget applies to, how a monthly total is calculated, and what should happen when data is invalid or conflicts with existing records.
@@ -1247,6 +1255,15 @@ Use the original capstone handout as the final authority for exact wording. The 
 | Health endpoint | Service responds through the intended route | HTTP status/body from public endpoint | “Health means every feature works.” |
 | README and documentation | Reproducible setup and clear architecture | Updated setup, environment variables, architecture, limitations | “A setup guide can omit required secrets and migration steps.” |
 | Screenshots and live demo | Evidence that a real scenario works | Dated screenshots, recording, test account | “A screenshot alone proves database persistence.” |
+
+## Feature-claim risk: income management is advertised but not visible in the active API path
+
+The root README advertises income management and points to a root-level Income page. However, the Compose frontend is built from `./frontend`; its `frontend/src/App.jsx` does not import an Income page, and the reviewed backend route directory contains no income-specific API module. The active frontend calls the categories, expenses, budgets, and summaries endpoints.
+
+Before the defense, the team should decide whether income tracking is part of the promised scope. If yes, add the required backend persistence, API contract, frontend workflow, validation, and tests. If not, correct the README and avoid presenting income management as a working API-backed feature. This is a source-review finding; runtime testing may reveal more, but no unsupported claim should be made before that evidence exists.
+
+**Likely tutor question: “Your README says income management. Show me where it is saved.”**  
+A defensible answer must identify the actual API endpoint and database persistence, then demonstrate creating and retrieving an income record. If that path does not exist in the deployed version, acknowledge that the README overstates the current implementation and explain the agreed scope or planned correction.
 
 ## Repository consistency risk: duplicate frontend source trees
 
