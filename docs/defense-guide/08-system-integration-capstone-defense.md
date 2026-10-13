@@ -83,6 +83,14 @@ Before the defense, the team should confirm the actual build context and deploye
 
 **Evidence to prepare:** the relevant Compose `build:` setting, the frontend entry point included in the image, the workflow's build context, the deployed image tag/digest or commit, and a browser demonstration of a transaction saved through the Flask API and retrieved after reload/login.
 
+## Repository consistency risk: duplicate frontend source trees
+
+The repository has both root-level `src/` and `frontend/src/`. The root README describes localStorage-backed application records, but the Compose frontend is built from `./frontend`, whose main app loads data through the Flask API. These are not interchangeable implementations. A component may exist in the root tree but never be included in the Docker image used for the AWS deployment.
+
+Before the defense, the team should confirm the actual build context and deployed image, update the README to describe that version, and either remove the unused source tree in a separate reviewed change or explain why both trees are retained. Do not claim both implementations are active unless the build and deployment prove that.
+
+**Evidence to prepare:** the relevant Compose `build:` setting, the frontend entry point included in the image, the workflow's build context, the deployed image tag/digest or commit, and a browser demonstration of a transaction saved through the Flask API and retrieved after reload/login.
+
 ## 5. The most important integration risk in this repository
 
 The frontend documentation describes browser `localStorage` as a persistence layer, while the backend includes PostgreSQL-backed routes. The backend route registration reviewed includes auth, categories, expenses, budgets, and summaries, but does not show a dedicated income route. This means the team must verify feature-by-feature whether the visible React screens call the server API or operate on local browser data.
