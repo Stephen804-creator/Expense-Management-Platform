@@ -15,7 +15,7 @@ This folder contains eight connected study documents for the Expense Tracker cap
 
 ## Important note about the current repository
 
-The repository currently contains both a root-level `src/` frontend and a `frontend/src/` frontend. The Docker Compose frontend service builds from `./frontend`. The root README describes localStorage-backed application records, while `frontend/src/App.jsx` loads application data through the Flask API. These are materially different designs.
+The repository currently contains both a root-level `src/` frontend and a `frontend/src/` frontend. The Docker Compose frontend service builds from `./frontend`. The root README claims that application records persist in browser localStorage, while `frontend/src/App.jsx` loads categories, expenses, budgets, and summaries through the Flask API. This is a documentation/source inconsistency; trace the active data path and update the README before claiming which persistence design is used.
 
 Before the defense, use the active Docker build context and the deployed image to establish which frontend users actually receive. Update the project README so its feature and persistence claims match that implementation. Do not claim that a feature is backed by PostgreSQL unless its request path and persistence have been verified.
 
