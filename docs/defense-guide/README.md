@@ -13,6 +13,12 @@ This folder contains eight connected study documents for the Expense Tracker cap
 7. [Session 7 — Docker, Nginx, AWS, and deployment](07-docker-nginx-aws-deployment.md)
 8. [Session 8 — End-to-end architecture, capstone alignment, and defense](08-system-integration-capstone-defense.md)
 
+## Important note about the current repository
+
+The repository currently contains both a root-level `src/` frontend and a `frontend/src/` frontend. The Docker Compose frontend service builds from `./frontend`. The root README describes localStorage-backed application records, while `frontend/src/App.jsx` loads application data through the Flask API. These are materially different designs.
+
+Before the defense, use the active Docker build context and the deployed image to establish which frontend users actually receive. Update the project README so its feature and persistence claims match that implementation. Do not claim that a feature is backed by PostgreSQL unless its request path and persistence have been verified.
+
 ## One-file copy
 
 If you want to send or read the entire guide as one normal Markdown file, use [the complete eight-session guide](EXPENSE_TRACKER_DEFENSE_GUIDE_ALL_SESSIONS.md). The eight individual files remain available above.
