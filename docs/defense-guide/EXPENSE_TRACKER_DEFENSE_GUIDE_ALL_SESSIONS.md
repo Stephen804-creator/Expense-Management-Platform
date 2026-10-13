@@ -15,6 +15,8 @@ This file combines the eight individual study sessions. For easier reading, each
 
 ---
 
+<a id="session-1"></a>
+
 # Session 1 — Frontend Development and React
 
 ## 1. What the frontend is
@@ -169,6 +171,8 @@ I would first prove and standardise the frontend-to-API integration for each fea
 “The frontend is the user's interface. We use React components to divide the dashboard into manageable pieces, state to represent changing UI data, props to pass information, and Context for selected shared concerns such as notifications or authentication state. The frontend must validate input for usability, call the correct persistence layer, and show the server's actual result. Our repository documents localStorage-based frontend state as well as a Flask/PostgreSQL backend, so we must verify that each feature is truly API-connected before claiming database persistence. We validate that through network inspection, backend tests, browser journeys, and a deployed demonstration.”
 
 ---
+
+<a id="session-2"></a>
 
 # Session 2 — Backend Development and the REST API
 
@@ -337,6 +341,8 @@ No. It proves only the tested backend behaviour under the test conditions. Publi
 
 ---
 
+<a id="session-3"></a>
+
 # Session 3 — PostgreSQL, Data Modelling, and Data Integrity
 
 ## 1. What the database is responsible for
@@ -493,6 +499,8 @@ No. CI proves the migration worked in the test database it created. AWS may have
 “PostgreSQL stores the durable records. Tables represent entities, primary keys identify rows, foreign keys preserve relationships, and unique constraints protect rules such as one budget per user, month, and category. SQLAlchemy lets Python work with these records, but PostgreSQL remains the final authority on database constraints. A transaction should commit only when the operation succeeds and roll back on failure. Migrations change schemas in a controlled order, and existing Docker volumes need explicit migration execution. We prove database correctness with migration tests, constraint checks, rollback tests, and safe tests against existing data.”
 
 ---
+
+<a id="session-4"></a>
 
 # Session 4 — Authentication, Authorization, Validation, and Security
 
@@ -661,6 +669,8 @@ Create two accounts, create an expense as user A, then attempt to read, update, 
 
 ---
 
+<a id="session-5"></a>
+
 # Session 5 — Expense Tracker Features and Business Logic
 
 ## 1. Start with the problem the application solves
@@ -818,6 +828,8 @@ Reproduce it with known transactions, verify ownership/category/month filters, c
 “The application turns individual expense records into useful information. Categories group records, budgets compare eligible spending with a limit, and reports aggregate transactions by month. Each calculation depends on clear business rules for ownership, category, date range, precision, and uniqueness. The database must preserve the relationships behind those calculations. We test features using small datasets with known expected answers, and we verify that the frontend and backend use the same data source. We do not claim a screen is server-persisted merely because it appears in React.”
 
 ---
+
+<a id="session-6"></a>
 
 # Session 6 — Testing, Quality Assurance, and Continuous Integration
 
@@ -988,6 +1000,8 @@ State the exact test not performed, why it was not performed, what evidence is m
 
 ---
 
+<a id="session-7"></a>
+
 # Session 7 — Docker, Nginx, GitHub Actions, and AWS Deployment
 
 ## 1. What deployment means
@@ -1154,6 +1168,8 @@ Record the tested commit, build images from that commit, deploy immutable image 
 “Docker packages the frontend and backend and Compose connects them to PostgreSQL and Nginx. Nginx routes public requests, PostgreSQL uses a persistent volume, and health checks provide limited signals about service availability. GitHub Actions CI checks code and builds; CD publishes and deploys a specific version. Our agreed cloud target is AWS, so the deployment workflow must be checked against the actual AWS server, secrets, image version, and deployment commands before we claim automated AWS deployment. We prove a release with the exact commit or image digest, migration logs, public health checks, and a real user journey.”
 
 ---
+
+<a id="session-8"></a>
 
 # Session 8 — System Integration, Capstone Alignment, and Difficult Defense Questions
 
