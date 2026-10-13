@@ -4,7 +4,7 @@
 
 Deployment means making a selected version of the application available in a target environment. It is more than uploading source code. The environment needs compatible runtime dependencies, configuration, secrets, database access, network rules, a running process, and a way to verify that the application works.
 
-In this project, the stated deployment target is AWS, accepted by the tutor as an alternative to the Azure VM named in the original capstone PDF. The typical VM option is Amazon EC2. EC2 supplies a virtual server; Docker Compose runs the application services on that server.
+In this project, the agreed deployment target is AWS, using Amazon EC2 as the virtual machine host. EC2 supplies the server; Docker Compose runs the application services on it. Describe only the resources that the team actually configured and can demonstrate.
 
 The team should describe what is actually running: frontend, Flask backend, PostgreSQL, and Nginx containers; the public entry point; where the database files persist; how secrets are provided; and how the deployed version is identified. Do not claim PostgreSQL is on Amazon RDS if it is running as a Compose container on the EC2 instance.
 
@@ -57,7 +57,7 @@ A moving tag such as latest is convenient but can change over time. The team sho
 
 ## 5. Important current repository alignment issue
 
-The team has stated that AWS was accepted by the tutor and is the actual deployment target. However, the reviewed main branch's CD workflow still describes an Azure VM and references Azure-specific secret names such as AZURE_VM_HOST, AZURE_VM_USER, and AZURE_VM_SSH_KEY. The workflow also names its deployment job for Azure.
+The current correction branch's CD workflow is written for AWS EC2. It runs after CI succeeds on a push to `main`, publishes commit-tagged container images to GHCR, and only attempts deployment when `DEPLOY_ENABLED=true`. The deployment uses `AWS_EC2_HOST`, `AWS_EC2_USER`, and `AWS_EC2_SSH_KEY`, checks out the tested commit on the VM, applies the configured migrations before restarting application services, and performs a health check. This is evidence of workflow configuration, not proof that the latest image is already running on the live VM. The team must show the successful deployment run, the deployed commit/image, and live health/browser evidence.
 
 This means the repository's current workflow must be reconciled with the AWS deployment before the team claims that the checked-in CD workflow automatically deploys to AWS. The application might have been deployed manually or by a different process, but that is not the same claim as “this workflow deploys it to AWS.”
 
@@ -199,8 +199,8 @@ Show the CI run and tested commit, the published image tag/digest, deployment lo
 **Q10. What is the difference between a backup and a Docker volume?**  
 A volume stores persistent data outside a container's writable layer. A backup is a recoverable copy protected from some failures, including accidental deletion or host loss. A volume alone is not a backup.
 
-**Q11. Why does the main workflow still mentioning Azure matter if the app is on AWS?**  
-The live deployment target and automated workflow must agree. If the workflow still expects Azure host secrets, it cannot be presented as verified AWS deployment automation. The team must align the workflow with AWS and run it successfully, or clearly explain that deployment was performed by a different process.
+**Q11. What evidence proves that the AWS deployment workflow actually deployed the version being defended?**  
+Show the successful CI run for the exact commit, the CD run triggered from that successful push to `main`, the commit-tagged image published to GHCR, the deployment log showing that same commit/image was selected on EC2, and successful public health checks. Then demonstrate browser journeys against the live site. A workflow file or green CI badge alone proves neither that deployment occurred nor that the live site is running that version.
 
 **Q12. What would you do if deployment succeeded but health checks failed?**  
 Stop treating the release as successful. Inspect service status and logs, verify ports and environment, check database/migration state, and restore the previous known-good version or follow the documented recovery procedure.
