@@ -75,6 +75,14 @@ Use the original capstone handout as the final authority for exact wording. The 
 | README and documentation | Reproducible setup and clear architecture | Updated setup, environment variables, architecture, limitations | “A setup guide can omit required secrets and migration steps.” |
 | Screenshots and live demo | Evidence that a real scenario works | Dated screenshots, recording, test account | “A screenshot alone proves database persistence.” |
 
+## Repository consistency risk: duplicate frontend source trees
+
+The repository has both root-level `src/` and `frontend/src/`. The root README describes localStorage-backed application records, but the Compose frontend is built from `./frontend`, whose main app loads data through the Flask API. These are not interchangeable implementations. A component may exist in the root tree but never be included in the Docker image used for the AWS deployment.
+
+Before the defense, the team should confirm the actual build context and deployed image, update the README to describe that version, and either remove the unused source tree in a separate reviewed change or explain why both trees are retained. Do not claim both implementations are active unless the build and deployment prove that.
+
+**Evidence to prepare:** the relevant Compose `build:` setting, the frontend entry point included in the image, the workflow's build context, the deployed image tag/digest or commit, and a browser demonstration of a transaction saved through the Flask API and retrieved after reload/login.
+
 ## 5. The most important integration risk in this repository
 
 The frontend documentation describes browser `localStorage` as a persistence layer, while the backend includes PostgreSQL-backed routes. The backend route registration reviewed includes auth, categories, expenses, budgets, and summaries, but does not show a dedicated income route. This means the team must verify feature-by-feature whether the visible React screens call the server API or operate on local browser data.
@@ -83,7 +91,7 @@ This issue should be discussed constructively and precisely. Do not say “the a
 
 ## 6. The most important deployment alignment risk
 
-The reviewed CD workflow contains Azure VM labels and Azure-specific secret names. The tutor has approved AWS as the alternative target, so the team should update the automated workflow to the actual AWS deployment method or document the manual deployment method that is truly used.
+The CD workflow must be consistent with the AWS deployment method the team actually uses. The team should verify the host, secrets, image version, commands, and recovery path, or clearly document the verified manual deployment procedure.
 
 Until that is done, separate three statements:
 - **Approved target:** AWS has been accepted by the tutor, according to the team.
@@ -149,7 +157,7 @@ The browser should not have database credentials or direct database access. The 
 **Q11. Does an access token mean every API request is safe?**  
 No. The token must be valid, the route must enforce authentication, the resource must be scoped to the user, inputs must be validated, and the database must enforce integrity.
 
-**Q12. If AWS is the approved target, why is Azure still in the workflow?**  
+**Q12. How do we know the workflow deploys to the approved AWS environment?**  
 The source configuration has not yet been fully aligned with the team's updated deployment decision. The correction is to update the pipeline and secrets for the actual AWS method and then prove it with a successful run and live verification. Approval of a target is not the same as implementation of its deployment pipeline.
 
 **Q13. How do you respond when you do not know whether a feature is fully integrated?**  
