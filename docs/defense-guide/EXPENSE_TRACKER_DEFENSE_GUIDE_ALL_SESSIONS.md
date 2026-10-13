@@ -109,7 +109,7 @@ Accessibility includes semantic headings, labels associated with inputs, keyboar
 
 The repository contains both a root-level `src/` directory and a `frontend/src/` directory. The root `package.json` can build the root Vite app, but the Docker Compose configuration builds the frontend service from `./frontend`. That means the frontend packaged by the Compose deployment is the one under `frontend/`, not automatically the root-level `src/` version.
 
-This matters in a defense: do not point to a component in the root `src/` tree and assume that it is running on AWS. Check the Docker build context, the active workflow, and the deployed image. The root README describes localStorage-backed records, while `frontend/src/App.jsx` includes state loaded through the Flask API. These are different persistence designs. The team should identify which interface is actually deployed and keep the README aligned with it.
+This matters in a defense: do not point to a component in the root `src/` tree and assume that it is running on AWS. Check the Docker build context, the active workflow, and the deployed image. The root README claims localStorage-backed persistence for application records, while `frontend/src/App.jsx` loads categories, expenses, budgets, and summaries through the Flask API. This is a documentation/source inconsistency; trace the active data path and update the README before claiming which persistence design is used. The team should identify which interface is actually deployed and keep the README aligned with it.
 
 **Likely tutor question: “Why do you have two frontend folders, and which one is running?”**  
 A strong answer is: “The repository currently contains two frontend source trees, so we verify the actual entry point rather than guessing. Docker Compose builds `./frontend`, so that is the frontend used by that Compose configuration. We should consolidate or clearly label the unused tree and update the README to avoid describing one version while deploying another.”
@@ -783,7 +783,7 @@ Business logic is the meaning of the application. It explains what counts as an 
 - **QA and CI:** use known test data with manually calculated expected totals. Test normal cases, empty months, boundary dates, duplicate budgets, deleted categories, and invalid amounts.
 - **AWS deployment:** the demonstrated result must come from the actual deployed API and database. A feature in source code or a browser-only demo does not prove that it works on the server.
 
-**Important accuracy rule:** the repository has both a root-level frontend and a `frontend/` frontend. The Compose file builds `./frontend`; the root README also describes localStorage-backed records. Verify the active UI and persistence path before claiming that every listed screen is connected to PostgreSQL. The guide teaches the intended rules, but only tested implementation evidence proves that a feature is complete.
+**Important accuracy rule:** the repository has both a root-level frontend and a `frontend/` frontend. The Compose file builds `./frontend`; the root README claims that application records persist in browser localStorage, while the active frontend loads several records through the Flask API. Verify the active UI and persistence path before claiming that every listed screen is connected to PostgreSQL. The guide teaches the intended rules, but only tested implementation evidence proves that a feature is complete.
 
 ## 10. Tough defense questions
 
