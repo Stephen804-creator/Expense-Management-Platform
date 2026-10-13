@@ -2,7 +2,7 @@
 
 This document describes the project's current Continuous Integration (CI) and Continuous Delivery (CD) workflows.
 
-The CI pipeline validates changes on pull requests and pushes to the project's integration branches. The CD pipeline can publish Docker images to GitHub Container Registry (GHCR) and is prepared for Azure VM deployment when deployment is explicitly enabled.
+The CI pipeline validates changes on pull requests and pushes to the project's integration branches. The CD pipeline can publish Docker images to GitHub Container Registry (GHCR) and is prepared for AWS VM deployment when deployment is explicitly enabled.
 
 The team's Git workflow is described in [CONTRIBUTING.md](../CONTRIBUTING.md).
 
@@ -20,7 +20,7 @@ flowchart LR
     M --> CI2[CI Validation]
     CI2 --> P[CD: Publish Images]
     P --> G[GitHub Container Registry]
-    P --> DEP[Azure Deployment]
+    P --> DEP[AWS Deployment]
     DEP --> H[Health Check]
 ```
 
@@ -33,8 +33,8 @@ The project separates validation from delivery:
 5. Pushes to `main` or `nginx` trigger CI again.
 6. A successful push to `main` can trigger the CD workflow.
 7. CD publishes Docker images to GHCR.
-8. Azure deployment remains disabled unless `DEPLOY_ENABLED=true`.
-9. When Azure deployment is enabled, the workflow connects to the configured VM and performs a deployment and health check.
+8. AWS deployment remains disabled unless `DEPLOY_ENABLED=true`.
+9. When AWS deployment is enabled, the workflow connects to the configured VM and performs a deployment and health check.
 
 ---
 
@@ -375,13 +375,13 @@ Images receive:
 - A short commit SHA tag
 - A `latest` tag
 
-The commit SHA allows a specific build to be identified, while `latest` represents the most recently published image.
+The commit-tagged image identifies a specific build. The workflow also publishes `latest` for convenience, but deployment must use the `sha-<short commit>` tag tied to the CI-tested commit, with registry tag immutability enforced or the image digest pinned for stronger guarantees.
 
 ---
 
-# 14. Azure Deployment
+# 14. AWS Deployment
 
-The CD workflow contains an Azure VM deployment job, but deployment is **not automatically enabled by default**.
+The CD workflow contains an AWS VM deployment job, but deployment is **not automatically enabled by default**.
 
 Deployment runs only when the repository variable:
 
@@ -401,16 +401,13 @@ and the CD workflow is running against:
 main
 ```
 
-The deployment job uses SSH to connect to the configured Azure VM.
+The deployment job uses SSH to connect to the configured AWS EC2 VM. It forwards the GHCR read-only credentials to the remote script through the action's environment forwarding, logs in with `--password-stdin`, pulls the commit-tagged images, and logs out on exit. The runner's own GHCR login does not authenticate the EC2 host. The remote script derives the short commit tag with POSIX-compatible shell commands so it does not depend on Bash-only substring expansion.
 
-The configured deployment process performs:
+The corrected deployment process checks out the commit associated with the successful CI run, selects the corresponding `sha-<short commit>` backend/frontend image tags, pulls those images, and restarts the Compose services. It then applies the idempotent user-settings migration (002), applies the budget uniqueness migration (003), applies category-budget deletion restriction migration (004), applies the optional profile-phone migration (005), provisions the restricted application database role (006), and checks both public health endpoints. Migration 003 intentionally fails if legacy duplicate budgets exist, stopping deployment until the data is reviewed and remediated. Migration 004 ensures deleting a category cannot silently convert linked budgets into whole-month budgets. Migration 005 adds the nullable `users.phone` column used by the profile API; it must complete before application services restart. The Compose services also use `restart: unless-stopped`; this helps recover containers after Docker or EC2 restarts, but a staging reboot test must still prove the host starts Docker and both public health endpoints recover. Migration 006 reads `POSTGRES_APP_USER` and `POSTGRES_APP_PASSWORD` from the protected environment, rejects placeholder/weak runtime passwords, and grants the application role no database/role creation privileges. Add these variables to an existing AWS host before deploying this migration.
 
-```bash
-git pull --ff-only
-docker compose pull
-docker compose up -d --remove-orphans
-docker image prune -f
-```
+The image tag is commit-specific but is not inherently immutable. For stronger release integrity, configure registry tag immutability or pin and record each image digest.
+
+The application runtime account is separate from the bootstrap/migration account. The backend container must receive only the runtime credentials; migration commands run with the bootstrap account. A disposable AWS staging test must prove the role can perform application CRUD and cannot create roles, databases, or schema objects.
 
 The deployment path defaults to:
 
@@ -422,31 +419,33 @@ unless `DEPLOY_PATH` is configured.
 
 ### Current status
 
-The Azure deployment infrastructure is **planned/configurable rather than confirmed as an active production deployment**.
+The AWS deployment infrastructure is **planned/configurable rather than confirmed as an active production deployment**.
 
-The repository should therefore not be described as currently running in production on Azure until the Azure VM, production configuration, deployment secrets, and deployment workflow have been configured and verified.
+The repository should therefore not be described as currently running in production on AWS until the AWS VM, production configuration, deployment secrets, and deployment workflow have been configured and verified.
 
 ---
 
 # 15. CD Configuration
 
-When Azure deployment is ready to be enabled, the repository requires the following configuration.
+When AWS deployment is ready to be enabled, the repository requires the following configuration.
 
 ### Repository secrets
 
 | Name | Purpose |
 |---|---|
-| `AZURE_VM_HOST` | Azure VM public IP address or hostname |
-| `AZURE_VM_USER` | SSH user |
-| `AZURE_VM_SSH_KEY` | Private SSH key used for deployment |
+| `AWS_EC2_HOST` | AWS VM public IP address or hostname |
+| `AWS_EC2_USER` | SSH user |
+| `AWS_EC2_SSH_KEY` | Private SSH key used for deployment |
+| `GHCR_READ_USERNAME` | Account name used by the AWS host to authenticate to GHCR |
+| `GHCR_READ_TOKEN` | Protected read-only token that permits the AWS host to pull the required images |
 
 ### Repository variables
 
 | Name | Purpose |
 |---|---|
-| `DEPLOY_ENABLED` | Enables Azure deployment when set to `true` |
+| `DEPLOY_ENABLED` | Enables AWS deployment when set to `true` |
 | `APP_URL` | Public application URL used by the health check |
-| `DEPLOY_PATH` | Application directory on the Azure VM |
+| `DEPLOY_PATH` | Application directory on the AWS VM |
 
 The production environment should also be configured in:
 
@@ -466,37 +465,32 @@ Production secrets such as database passwords and application secret keys must r
 
 # 16. Deployment Health Check
 
-After deployment, the CD workflow performs an HTTP health check using:
+After deployment, the corrected CD workflow checks both public health endpoints:
 
 ```text
-<APP_URL>/health
+<APP_URL>/api/health
+<APP_URL>/api/health/db
 ```
 
-The request is retried several times before the workflow is considered failed.
+The first endpoint verifies that the application is responding. The second verifies that the backend can reach PostgreSQL. The workflow retries each endpoint and fails deployment verification if either request does not succeed.
 
 ### Important endpoint distinction
 
-The current application exposes the backend health endpoint at:
+The backend exposes:
 
 ```text
 /health
+/health/db
 ```
 
-and Nginx exposes it externally as:
+The correction branch's Nginx configuration maps these publicly as:
 
 ```text
 /api/health
+/api/health/db
 ```
 
-The current CD workflow checks:
-
-```text
-<APP_URL>/health
-```
-
-Therefore, the Azure deployment health-check path and the currently configured Nginx public health path should be reconciled before production deployment is enabled.
-
-This documentation does not treat the Azure deployment as verified until that deployment path has been tested successfully.
+The mapping must be tested through the deployed Nginx service. A source-level mapping or a healthy container alone is not sufficient evidence that both public endpoints work.
 
 ---
 
@@ -520,9 +514,9 @@ The CD workflow, however, is designed to publish images to GHCR and then use:
 docker compose pull
 ```
 
-on the Azure VM.
+on the AWS VM.
 
-Therefore, the production Compose configuration must reference the published images correctly before Azure deployment is enabled.
+Therefore, the production Compose configuration must reference the published images correctly before AWS deployment is enabled.
 
 Local Docker Compose behavior and production image-pull behavior should not be assumed to be identical.
 
@@ -591,9 +585,9 @@ The repository currently uses `nginx` as an important integrated application bra
 | Frontend build fails | Run `npm run build` from `frontend/` and inspect the build error. |
 | Docker build fails | Build the affected Dockerfile locally using its service directory as the build context. |
 | CD does not publish images | Confirm CI succeeded for the relevant `main` push or run CD manually. |
-| Azure deployment is skipped | Confirm `DEPLOY_ENABLED=true` and that the workflow is running against `main`. |
-| Azure SSH deployment fails | Check `AZURE_VM_HOST`, `AZURE_VM_USER`, `AZURE_VM_SSH_KEY`, VM SSH access, and `DEPLOY_PATH`. |
-| Docker image pull fails on Azure | Confirm the GHCR image exists and that the VM's Docker configuration can access the required package. |
+| AWS deployment is skipped | Confirm `DEPLOY_ENABLED=true` and that the workflow is running against `main`. |
+| AWS SSH deployment fails | Check `AWS_EC2_HOST`, `AWS_EC2_USER`, `AWS_EC2_SSH_KEY`, VM SSH access, and `DEPLOY_PATH`. |
+| Docker image pull fails on AWS | Confirm `GHCR_READ_USERNAME` and `GHCR_READ_TOKEN` are configured, the token can read both packages, and the remote login/pull succeeds without printing the token. |
 | Deployment health check fails | Verify `APP_URL`, the application's exposed health endpoint, Nginx routing, and the running containers on the VM. |
 
 ---
@@ -608,7 +602,7 @@ The CI/CD pipeline follows these principles:
 - CI uses dedicated test credentials.
 - Production credentials remain outside the repository.
 - GHCR publishing uses GitHub's `GITHUB_TOKEN`.
-- Azure deployment uses a dedicated SSH key.
+- AWS deployment uses a dedicated SSH key.
 - Deployment is disabled until explicitly enabled.
 - Production deployment should use a dedicated environment and appropriate approval controls.
 
@@ -628,10 +622,10 @@ The CI/CD pipeline follows these principles:
 | Docker image build validation | Implemented |
 | Aggregate `ci-success` check | Implemented |
 | GHCR image publishing | Implemented in CD workflow |
-| Azure VM deployment workflow | Implemented/configurable |
-| Azure production deployment | Not confirmed as active |
+| AWS VM deployment workflow | Implemented/configurable |
+| AWS production environment | Documented in README; current-release deployment evidence pending in this audit |
 | Production health-check verification | Not confirmed |
-| Production Compose/image configuration | Requires verification before enabling deployment |
+| Commit-tagged Compose image configuration | Updated in correction branch; CI/runtime verification pending |
 
 ---
 
