@@ -113,6 +113,20 @@ For example, if the frontend sends `date` but the backend expects `expense_date`
 
 The repository's documented frontend uses browser storage, while the backend exposes server API routes. The team should make a route-to-screen map and prove each screen uses the correct API before claiming complete end-to-end integration.
 
+## 10. How this backend session connects to the capstone
+
+The capstone is not satisfied merely because a Flask file exists. The backend must participate in a working path from the React screen to the PostgreSQL database and back.
+
+- **React frontend:** calls API endpoints and displays returned data or error messages. The frontend must use the actual endpoint paths and response shape.
+- **Flask REST API:** validates incoming data, checks identity and permissions, applies business rules, and calls the database layer.
+- **PostgreSQL and SQLAlchemy:** store and retrieve records. A successful API response should reflect a completed database operation when the feature claims to save data.
+- **Nginx:** routes public `/api/` requests to Flask and normal browser requests to the frontend. An endpoint that works directly on Flask can still fail through Nginx.
+- **Docker Compose:** runs the frontend, backend, database, and proxy as connected services. Service names and health dependencies matter.
+- **GitHub Actions:** provides automated evidence such as linting, tests, and builds. Passing CI does not itself prove that AWS is running that exact version.
+- **AWS deployment:** the running server, environment variables, database, health routes, and deployed commit/image must agree with the version being demonstrated.
+
+**A complete backend demonstration:** log in, create an expense with a valid amount/date/category, show the API response, retrieve the expense again, then explain where the ownership filter is enforced and how the database persists the record. Do not rely on a screenshot of a form as proof that the API or database works.
+
 ## 10. Tough defense questions
 
 **Q1. Why not put all business logic in React?**  
