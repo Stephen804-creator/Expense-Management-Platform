@@ -8,7 +8,7 @@ The project runs four services:
 Browser
    |
    v
-Nginx :8080
+Nginx :80
    |
    +--------------------+
    |                    |
@@ -35,7 +35,7 @@ Nginx is the application's host-facing entry point. The frontend, backend, and P
 Only Nginx publishes a host port:
 
 ```text
-localhost:8080
+localhost
 ```
 
 The backend and PostgreSQL ports are not directly published to the host.
@@ -63,7 +63,16 @@ It also defines the persistent PostgreSQL volume:
 postgres_data
 ```
 
-Start the complete stack with:
+From the repository root, create both environment files:
+
+```bash
+cp .env.example .env
+cp backend/.env.example backend/.env
+```
+
+Edit the root `.env` and set unique strong passwords for both the bootstrap database account and the restricted runtime account. The runtime password must be at least 32 characters and not a placeholder. In `backend/.env`, replace both Flask/JWT placeholders with separate strong random values. Do not commit either file. The root `.env` provides Compose interpolation for database credentials; `backend/.env` provides application signing secrets. The Compose configuration fails at startup if required database variables are missing.
+
+Then start the complete stack with:
 
 ```bash
 docker compose up -d --build
@@ -78,7 +87,7 @@ docker compose ps
 The application is then available at:
 
 ```text
-http://localhost:8080
+http://localhost
 ```
 
 Stop the stack:
@@ -191,7 +200,7 @@ Docker Compose loads the backend environment from:
 backend/.env
 ```
 
-This file must remain untracked.
+This file must remain untracked. Create it with `cp backend/.env.example backend/.env` before starting the stack, and replace the `SECRET_KEY` and `JWT_SECRET` placeholders with distinct strong random values.
 
 Compose also provides the PostgreSQL connection configuration:
 
@@ -199,8 +208,8 @@ Compose also provides the PostgreSQL connection configuration:
 POSTGRES_HOST=postgres
 POSTGRES_PORT=5432
 POSTGRES_USER=expense_user
-POSTGRES_PASSWORD=expense_password
-POSTGRES_DB=expense_db
+POSTGRES_PASSWORD=replace-with-a-strong-random-database-password
+POSTGRES_DB=expense_management
 ```
 
 The hostname is `postgres` because Docker Compose provides service-name DNS within the Compose network.
@@ -223,16 +232,15 @@ PostgreSQL uses:
 postgres:16-alpine
 ```
 
-The local development database configuration is:
+The local development database settings are read from the repository-root `.env` file:
 
 ```text
-Database: expense_db
-User:     expense_user
-Password: expense_password
-Port:     5432
+POSTGRES_DB
+POSTGRES_USER
+POSTGRES_PASSWORD
 ```
 
-These are development credentials and must not be reused as production credentials.
+Use a unique strong password and never reuse a local password in production. Do not paste secret values into tickets, logs, screenshots, or documentation.
 
 The PostgreSQL container is named:
 
@@ -244,10 +252,14 @@ expense-postgres
 
 ## 7. Database Initialization
 
-The Compose configuration mounts:
+The Compose configuration mounts these versioned SQL files:
 
 ```text
 database/migrations/001_initial_schema.sql
+database/migrations/002_user_settings.sql
+database/migrations/003_budget_uniqueness.sql
+database/migrations/004_restrict_category_budget_delete.sql
+database/migrations/005_user_phone.sql
 ```
 
 into:
@@ -256,11 +268,7 @@ into:
 /docker-entrypoint-initdb.d/001_initial_schema.sql
 ```
 
-The migration is mounted read-only.
-
-PostgreSQL executes initialization scripts from this directory when a new database cluster is created.
-
-This means the initial application schema is automatically created when the PostgreSQL data volume is initialized for the first time.
+The files are mounted read-only. PostgreSQL executes initialization scripts from this directory when a new database cluster is created, in filename order. Migration 001 creates the initial schema; migration 002 adds user settings; migration 003 adds database-level budget uniqueness, including separate handling for budgets with a NULL category. Migration 003 stops with an actionable error if duplicate legacy budgets exist, so those records must be reviewed and resolved before deployment can continue. Migration 004 changes the budget-to-category foreign key from `ON DELETE SET NULL` to `ON DELETE RESTRICT`; a category referenced by a budget cannot be deleted and silently turned into a whole-month budget. Migration 005 adds the optional `users.phone` column so the Settings phone field can persist for existing and fresh databases.
 
 ---
 
@@ -333,13 +341,13 @@ The container listens on port:
 Docker Compose maps:
 
 ```text
-8080:80
+80:80
 ```
 
 Therefore:
 
 ```text
-Host:      localhost:8080
+Host:      localhost
 Container: nginx:80
 ```
 
@@ -380,7 +388,7 @@ The resulting request flow is:
 Browser
    |
    v
-localhost:8080
+localhost
    |
    v
 Nginx
@@ -427,7 +435,7 @@ The current Compose configuration publishes only Nginx:
 | Frontend | 80 | Not published |
 | Backend | 5000 | Not published |
 | PostgreSQL | 5432 | Not published |
-| Nginx | 80 | 8080 |
+| Nginx | 80 | 80 |
 
 This keeps the application services behind the Nginx entry point.
 
@@ -435,7 +443,7 @@ This keeps the application services behind the Nginx entry point.
 
 ## 13. Health Checks
 
-All four services have Docker health checks.
+All four services have Docker health checks and use `restart: unless-stopped` so Docker can restart them after a daemon or VM reboot. This depends on the Docker daemon starting on the host; verify recovery on AWS and do not assume the policy alone proves the public app is available.
 
 ### Frontend
 
@@ -458,7 +466,7 @@ http://localhost:5000/health
 Uses:
 
 ```bash
-pg_isready -U expense_user -d expense_db
+pg_isready -U expense_user -d expense_management
 ```
 
 ### Nginx
@@ -597,7 +605,7 @@ Connect directly to PostgreSQL:
 
 ```bash
 docker exec -it expense-postgres \
-  psql -U expense_user -d expense_db
+  psql -U expense_user -d expense_management
 ```
 
 ---
@@ -608,7 +616,7 @@ List the PostgreSQL tables:
 
 ```bash
 docker exec expense-postgres \
-  psql -U expense_user -d expense_db -c "\dt"
+  psql -U expense_user -d expense_management -c "\dt"
 ```
 
 The current application schema contains:
@@ -641,7 +649,7 @@ Database connection: OK
 Test the public Nginx health endpoint:
 
 ```bash
-curl http://localhost:8080/api/health
+curl http://localhost/api/health
 ```
 
 The backend's internal health endpoint is:
@@ -681,7 +689,7 @@ Check health
     ↓
 Check logs
     ↓
-Test through localhost:8080
+Test through localhost
 ```
 
 For a backend change:
@@ -714,7 +722,7 @@ docker compose up -d --build
 | Frontend cannot reach API | Confirm the frontend uses `/api` and Nginx routes `/api/` to the backend. |
 | Nginx returns an error | Check `docker compose logs nginx` and verify the upstream service names. |
 | Service is unhealthy | Run `docker compose ps` and inspect that service's logs. |
-| Port 8080 is already in use | Stop the process using port 8080 or change the host-side port mapping. |
+| Port 80 is already in use | Stop the process using port 80 or change the host-side port mapping. |
 | Changes are not appearing | Rebuild the affected service with `docker compose up -d --build <service>`. |
 | Local database needs a full reset | Use `docker compose down -v` followed by `docker compose up -d`. |
 
@@ -758,14 +766,14 @@ See [CI/CD documentation](ci-cd.md) for the complete pipeline.
 
 The current Compose configuration is the project's **local/integration environment**.
 
-The repository also contains a configurable CD workflow for publishing images and deploying to an Azure VM.
+The repository also contains a configurable CD workflow for publishing images and deploying to the approved AWS EC2 target. Migration 006 provisions the restricted runtime database role. The PostgreSQL bootstrap credentials stay in the database container and are not passed to the Flask backend.
 
-The Azure deployment should not be considered an active production deployment until the following have been configured and verified:
+The AWS deployment should not be considered an active production deployment until the following have been configured and verified:
 
 - Production environment variables.
 - Production database credentials.
 - GHCR image configuration.
-- Azure VM configuration.
+- AWS EC2 instance and SSH access configuration.
 - Docker Compose production configuration.
 - Nginx public routing.
 - Deployment secrets.
