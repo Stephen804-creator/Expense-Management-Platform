@@ -105,6 +105,18 @@ Before a schema change on a real database, the team should know:
 
 **Example E: Migration file is added to a running AWS instance.** The database will not necessarily run it automatically just because the file exists. The deployment process must apply it and capture the result.
 
+## 11. How the database session connects to the capstone
+
+PostgreSQL is the persistence layer in the capstone architecture. SQLAlchemy is the Python layer that maps backend operations to database queries, but it does not replace PostgreSQL or make constraints unnecessary.
+
+- **React and Flask:** React sends a request; Flask validates it and calls the ORM; SQLAlchemy issues SQL; PostgreSQL checks constraints and stores the change; the API returns the result.
+- **Docker Compose:** the database service must be healthy before the backend depends on it. The named volume is important because deleting and recreating a container should not automatically erase persistent records.
+- **Migrations:** a SQL file mounted into PostgreSQL's initialization directory normally runs only when the database data directory is initialized for the first time. An existing volume needs a deliberate migration process; adding a file does not mean it automatically ran.
+- **GitHub Actions:** migration checks in a temporary test database prove the tested migration sequence in that environment. They do not prove that an existing AWS database was upgraded successfully.
+- **AWS:** credentials belong in protected runtime configuration, not source code. The team must verify backups, volume persistence, and a recovery procedure for the actual server.
+
+**Capstone proof:** show the schema and constraints, run a known API operation, read back the stored row, and show migration/test evidence. If asked whether production data is safe, explain the actual backup and recovery process; do not claim backups exist unless there is evidence.
+
 ## 11. Tough defense questions
 
 **Q1. Why do we need foreign keys if Flask checks that a category exists?**  
