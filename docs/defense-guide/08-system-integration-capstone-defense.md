@@ -75,6 +75,15 @@ Use the original capstone handout as the final authority for exact wording. The 
 | README and documentation | Reproducible setup and clear architecture | Updated setup, environment variables, architecture, limitations | “A setup guide can omit required secrets and migration steps.” |
 | Screenshots and live demo | Evidence that a real scenario works | Dated screenshots, recording, test account | “A screenshot alone proves database persistence.” |
 
+## Feature-claim risk: income management is advertised but not visible in the active API path
+
+The root README advertises income management and points to a root-level Income page. However, the Compose frontend is built from `./frontend`; its `frontend/src/App.jsx` does not import an Income page, and the reviewed backend route directory contains no income-specific API module. The active frontend calls the categories, expenses, budgets, and summaries endpoints.
+
+Before the defense, the team should decide whether income tracking is part of the promised scope. If yes, add the required backend persistence, API contract, frontend workflow, validation, and tests. If not, correct the README and avoid presenting income management as a working API-backed feature. This is a source-review finding; runtime testing may reveal more, but no unsupported claim should be made before that evidence exists.
+
+**Likely tutor question: “Your README says income management. Show me where it is saved.”**  
+A defensible answer must identify the actual API endpoint and database persistence, then demonstrate creating and retrieving an income record. If that path does not exist in the deployed version, acknowledge that the README overstates the current implementation and explain the agreed scope or planned correction.
+
 ## Repository consistency risk: duplicate frontend source trees
 
 The repository has both root-level `src/` and `frontend/src/`. The root README claims localStorage-backed application-record persistence, but the Compose frontend is built from `./frontend`, whose main app loads categories, expenses, budgets, and summaries through the Flask API. The README and active frontend source therefore need to be reconciled. A component may exist in the root tree but never be included in the Docker image used for the AWS deployment.
