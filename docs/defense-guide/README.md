@@ -13,6 +13,10 @@ This folder contains eight connected study documents for the Expense Tracker cap
 7. [Session 7 — Docker, Nginx, AWS, and deployment](07-docker-nginx-aws-deployment.md)
 8. [Session 8 — End-to-end architecture, capstone alignment, and defense](08-system-integration-capstone-defense.md)
 
+## One-file copy
+
+If you want to send or read the entire guide as one normal Markdown file, use [the complete eight-session guide](EXPENSE_TRACKER_DEFENSE_GUIDE_ALL_SESSIONS.md). The eight individual files remain available above.
+
 ## How to study each document
 
 For each concept, answer these questions in your own words:
