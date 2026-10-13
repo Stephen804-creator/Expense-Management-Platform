@@ -99,6 +99,14 @@ A category may be global or user-owned. That is a product/security decision, not
 
 A tutor may intentionally ask an ambiguous question to see whether the team distinguishes the rule from the implementation. State the rule first, explain how it is enforced, and describe the evidence.
 
+## Feature-claim check: income management
+
+The root README advertises income management and lists an Income page in the root `src/pages/` tree. The frontend that Docker Compose builds is `frontend/`; its `frontend/src/App.jsx` imports Dashboard, Budgets, Categories, Transactions, Reports, and Settings, but not an Income page. The reviewed backend route directory contains `auth.py`, `budgets.py`, `categories.py`, `expenses.py`, and `summaries.py`; it does not show an income API route.
+
+That does not prove that no income-related code exists anywhere, but it means the current API-connected deployment path does not demonstrate an income feature from the files reviewed. In a defense, do not promise a feature solely because it appears in an old README or unused source tree.
+
+**Team decision:** either implement income as a real API-backed feature and test it end to end, or update the README and demonstration scope so they describe what the active application actually supports. If asked, state the current evidence and limitation honestly.
+
 ## 10. How business logic connects to the capstone
 
 Business logic is the meaning of the application. It explains what counts as an expense, which category a budget applies to, how a monthly total is calculated, and what should happen when data is invalid or conflicts with existing records.
