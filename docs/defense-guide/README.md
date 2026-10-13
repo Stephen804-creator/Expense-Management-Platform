@@ -19,6 +19,10 @@ The repository currently contains both a root-level `src/` frontend and a `front
 
 Before the defense, use the active Docker build context and the deployed image to establish which frontend users actually receive. Update the project README so its feature and persistence claims match that implementation. Do not claim that a feature is backed by PostgreSQL unless its request path and persistence have been verified.
 
+## Feature claims must match the deployed version
+
+The root README advertises income management, but the Compose frontend entry point does not import an Income page, and the reviewed backend route directory does not show an income-specific API module. Treat income tracking as unverified in the active API-backed deployment path until the team demonstrates the full create/save/retrieve flow. Either implement and test it or revise the feature description to match the actual scope.
+
 ## One-file copy
 
 If you want to send or read the entire guide as one normal Markdown file, use [the complete eight-session guide](EXPENSE_TRACKER_DEFENSE_GUIDE_ALL_SESSIONS.md). The eight individual files remain available above.
