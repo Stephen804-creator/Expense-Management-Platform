@@ -1,17 +1,17 @@
 # Expense Tracker — Complete Project Defense Study Guide
 
-This is a single-file copy of the eight-session study guide. For easier editing, printing, or sharing, each session is also available as a separate Markdown file in `docs/defense-guide/`.
+This file combines the eight individual study sessions. For easier reading, each session is also available as its own Markdown file in this folder.
 
 ## Contents
 
-1. Session 1 — Frontend Development and React
-2. Session 2 — Backend Development and the REST API
-3. Session 3 — PostgreSQL, Data Modelling, and Data Integrity
-4. Session 4 — Authentication, Authorization, Validation, and Security
-5. Session 5 — Expense Tracker Features and Business Logic
-6. Session 6 — Testing, Quality Assurance, and Continuous Integration
-7. Session 7 — Docker, Nginx, GitHub Actions, and AWS Deployment
-8. Session 8 — System Integration, Capstone Alignment, and Difficult Defense Questions
+1. [Session 1 — Frontend Development and React](#session-1)
+2. [Session 2 — Backend Development and the REST API](#session-2)
+3. [Session 3 — PostgreSQL, Data Modelling, and Data Integrity](#session-3)
+4. [Session 4 — Authentication, Authorization, Validation, and Security](#session-4)
+5. [Session 5 — Expense Tracker Features and Business Logic](#session-5)
+6. [Session 6 — Testing, Quality Assurance, and Continuous Integration](#session-6)
+7. [Session 7 — Docker, Nginx, GitHub Actions, and AWS Deployment](#session-7)
+8. [Session 8 — System Integration, Capstone Alignment, and Difficult Defense Questions](#session-8)
 
 ---
 
@@ -105,12 +105,12 @@ Accessibility includes semantic headings, labels associated with inputs, keyboar
 
 ## Important repository detail: two frontend source locations
 
-The repository contains both a root-level `src/` directory and a `frontend/src/` directory. Docker Compose builds its frontend service from `./frontend`, so the Compose deployment uses the frontend under `frontend/`, not automatically the root-level version. The root README describes localStorage-backed records, while `frontend/src/App.jsx` includes data loading through the Flask API. These designs are different.
+The repository contains both a root-level `src/` directory and a `frontend/src/` directory. The root `package.json` can build the root Vite app, but the Docker Compose configuration builds the frontend service from `./frontend`. That means the frontend packaged by the Compose deployment is the one under `frontend/`, not automatically the root-level `src/` version.
 
-A component can exist in the root tree without being included in the deployed Docker image. Before defending a feature, verify the build context, entry point, workflow, and deployed version. The team should consolidate or clearly label the unused source tree and update the README to match the implementation actually deployed.
+This matters in a defense: do not point to a component in the root `src/` tree and assume that it is running on AWS. Check the Docker build context, the active workflow, and the deployed image. The root README describes localStorage-backed records, while `frontend/src/App.jsx` includes state loaded through the Flask API. These are different persistence designs. The team should identify which interface is actually deployed and keep the README aligned with it.
 
 **Likely tutor question: “Why do you have two frontend folders, and which one is running?”**  
-A strong answer is: “The repository has two frontend source trees, so we verify the build rather than guessing. Docker Compose builds `./frontend`, so that is the frontend used by that Compose configuration. We should remove or clearly document the unused tree and keep the README aligned with the deployed code.”
+A strong answer is: “The repository currently contains two frontend source trees, so we verify the actual entry point rather than guessing. Docker Compose builds `./frontend`, so that is the frontend used by that Compose configuration. We should consolidate or clearly label the unused tree and update the README to avoid describing one version while deploying another.”
 
 ## 8. How the frontend connects to the other sections
 
@@ -285,6 +285,20 @@ For example, if the frontend sends `date` but the backend expects `expense_date`
 
 The repository's documented frontend uses browser storage, while the backend exposes server API routes. The team should make a route-to-screen map and prove each screen uses the correct API before claiming complete end-to-end integration.
 
+## 10. How this backend session connects to the capstone
+
+The capstone is not satisfied merely because a Flask file exists. The backend must participate in a working path from the React screen to the PostgreSQL database and back.
+
+- **React frontend:** calls API endpoints and displays returned data or error messages. The frontend must use the actual endpoint paths and response shape.
+- **Flask REST API:** validates incoming data, checks identity and permissions, applies business rules, and calls the database layer.
+- **PostgreSQL and SQLAlchemy:** store and retrieve records. A successful API response should reflect a completed database operation when the feature claims to save data.
+- **Nginx:** routes public `/api/` requests to Flask and normal browser requests to the frontend. An endpoint that works directly on Flask can still fail through Nginx.
+- **Docker Compose:** runs the frontend, backend, database, and proxy as connected services. Service names and health dependencies matter.
+- **GitHub Actions:** provides automated evidence such as linting, tests, and builds. Passing CI does not itself prove that AWS is running that exact version.
+- **AWS deployment:** the running server, environment variables, database, health routes, and deployed commit/image must agree with the version being demonstrated.
+
+**A complete backend demonstration:** log in, create an expense with a valid amount/date/category, show the API response, retrieve the expense again, then explain where the ownership filter is enforced and how the database persists the record. Do not rely on a screenshot of a form as proof that the API or database works.
+
 ## 10. Tough defense questions
 
 **Q1. Why not put all business logic in React?**  
@@ -429,6 +443,18 @@ Before a schema change on a real database, the team should know:
 **Example D: Category deletion is attempted while an expense or budget references it.** The database and API should follow a documented policy. A conflict response is often safer than silently changing the meaning of financial records.
 
 **Example E: Migration file is added to a running AWS instance.** The database will not necessarily run it automatically just because the file exists. The deployment process must apply it and capture the result.
+
+## 11. How the database session connects to the capstone
+
+PostgreSQL is the persistence layer in the capstone architecture. SQLAlchemy is the Python layer that maps backend operations to database queries, but it does not replace PostgreSQL or make constraints unnecessary.
+
+- **React and Flask:** React sends a request; Flask validates it and calls the ORM; SQLAlchemy issues SQL; PostgreSQL checks constraints and stores the change; the API returns the result.
+- **Docker Compose:** the database service must be healthy before the backend depends on it. The named volume is important because deleting and recreating a container should not automatically erase persistent records.
+- **Migrations:** a SQL file mounted into PostgreSQL's initialization directory normally runs only when the database data directory is initialized for the first time. An existing volume needs a deliberate migration process; adding a file does not mean it automatically ran.
+- **GitHub Actions:** migration checks in a temporary test database prove the tested migration sequence in that environment. They do not prove that an existing AWS database was upgraded successfully.
+- **AWS:** credentials belong in protected runtime configuration, not source code. The team must verify backups, volume persistence, and a recovery procedure for the actual server.
+
+**Capstone proof:** show the schema and constraints, run a known API operation, read back the stored row, and show migration/test evidence. If asked whether production data is safe, explain the actual backup and recovery process; do not claim backups exist unless there is evidence.
 
 ## 11. Tough defense questions
 
@@ -584,6 +610,19 @@ The deployment must also avoid trusting arbitrary forwarded headers unless the p
 
 Security claims must be supported by specific controls and tests.
 
+## 12. How security connects to the capstone
+
+Security must hold across the full deployed request path, not just on the login screen.
+
+- **React:** collects credentials and sends the token with protected API calls. Client-side hiding of buttons is not authorization.
+- **Flask:** validates credentials, verifies the JWT, derives the current user identity, checks ownership/permissions, validates input, and returns safe errors.
+- **PostgreSQL:** stores users and application records. Foreign keys and constraints protect data relationships, but they do not by themselves prove that a request is allowed to read a record.
+- **Nginx and networking:** route requests and should be configured with safe headers and an appropriate HTTPS/TLS arrangement for public use.
+- **Docker and AWS:** production secrets must be injected securely; placeholder secrets and development defaults must not be used for a public deployment. The public server should expose only the ports and services required.
+- **Testing and CI:** include unauthenticated access, invalid tokens, cross-user record access, malformed values, and secret/configuration checks. A green build without these cases is not proof of complete security.
+
+**Capstone proof:** demonstrate that user A cannot read, edit, delete, or export user B's records by changing an ID or calling the API directly. Show the exact test result and the deployed configuration evidence available to the team.
+
 ## 12. Tough defense questions
 
 **Q1. What is the difference between authentication and authorization?**  
@@ -722,6 +761,19 @@ A business rule describes what the application must mean. For example, “one bu
 A category may be global or user-owned. That is a product/security decision, not something React or PostgreSQL can decide automatically. Once the team decides, the schema, API queries, UI, tests, and documentation must agree.
 
 A tutor may intentionally ask an ambiguous question to see whether the team distinguishes the rule from the implementation. State the rule first, explain how it is enforced, and describe the evidence.
+
+## 10. How business logic connects to the capstone
+
+Business logic is the meaning of the application. It explains what counts as an expense, which category a budget applies to, how a monthly total is calculated, and what should happen when data is invalid or conflicts with existing records.
+
+- **React:** collects values and presents totals, progress, and alerts. It can make a screen easier to use, but it must not be the only place where important rules are enforced.
+- **Flask:** is responsible for validating values and applying server-side rules before records are saved or totals are returned.
+- **PostgreSQL:** preserves critical relationships and uniqueness rules even when concurrent requests arrive or an API route has a bug.
+- **Reports and dashboards:** must use consistent date boundaries, categories, ownership filters, and formulas. A dashboard total and a report total should agree when they cover the same records and period.
+- **QA and CI:** use known test data with manually calculated expected totals. Test normal cases, empty months, boundary dates, duplicate budgets, deleted categories, and invalid amounts.
+- **AWS deployment:** the demonstrated result must come from the actual deployed API and database. A feature in source code or a browser-only demo does not prove that it works on the server.
+
+**Important accuracy rule:** the repository has both a root-level frontend and a `frontend/` frontend. The Compose file builds `./frontend`; the root README also describes localStorage-backed records. Verify the active UI and persistence path before claiming that every listed screen is connected to PostgreSQL. The guide teaches the intended rules, but only tested implementation evidence proves that a feature is complete.
 
 ## 10. Tough defense questions
 
@@ -1182,11 +1234,19 @@ Use the original capstone handout as the final authority for exact wording. The 
 
 ## Repository consistency risk: duplicate frontend source trees
 
-The repository has both root-level `src/` and `frontend/src/`. The root README describes localStorage-backed application records, but the Compose frontend is built from `./frontend`, whose main app loads data through the Flask API. These are not interchangeable implementations. A component may exist in the root tree but never be included in the Docker image used for AWS.
+The repository has both root-level `src/` and `frontend/src/`. The root README describes localStorage-backed application records, but the Compose frontend is built from `./frontend`, whose main app loads data through the Flask API. These are not interchangeable implementations. A component may exist in the root tree but never be included in the Docker image used for the AWS deployment.
 
-Before the defense, confirm the actual build context and deployed image, update the README to describe that version, and either remove the unused source tree in a separate reviewed change or explain why both trees are retained. Do not claim both implementations are active unless the build and deployment prove that.
+Before the defense, the team should confirm the actual build context and deployed image, update the README to describe that version, and either remove the unused source tree in a separate reviewed change or explain why both trees are retained. Do not claim both implementations are active unless the build and deployment prove that.
 
-**Evidence to prepare:** the Compose `build:` setting, the frontend entry point included in the image, the workflow's build context, the deployed image tag/digest or commit, and a browser demonstration of a transaction saved through the Flask API and retrieved after reload/login.
+**Evidence to prepare:** the relevant Compose `build:` setting, the frontend entry point included in the image, the workflow's build context, the deployed image tag/digest or commit, and a browser demonstration of a transaction saved through the Flask API and retrieved after reload/login.
+
+## Repository consistency risk: duplicate frontend source trees
+
+The repository has both root-level `src/` and `frontend/src/`. The root README describes localStorage-backed application records, but the Compose frontend is built from `./frontend`, whose main app loads data through the Flask API. These are not interchangeable implementations. A component may exist in the root tree but never be included in the Docker image used for the AWS deployment.
+
+Before the defense, the team should confirm the actual build context and deployed image, update the README to describe that version, and either remove the unused source tree in a separate reviewed change or explain why both trees are retained. Do not claim both implementations are active unless the build and deployment prove that.
+
+**Evidence to prepare:** the relevant Compose `build:` setting, the frontend entry point included in the image, the workflow's build context, the deployed image tag/digest or commit, and a browser demonstration of a transaction saved through the Flask API and retrieved after reload/login.
 
 ## 5. The most important integration risk in this repository
 
